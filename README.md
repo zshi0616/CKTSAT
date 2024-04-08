@@ -1,0 +1,1 @@
+# CKTSAT: Circuit-based Preprocessing for KissaT SAT Solver

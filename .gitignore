@@ -1,0 +1,17 @@
+*__pycache__
+.DS_Store
+
+tmp 
+case
+output 
+bak 
+*.log 
+
+# mockturtle
+tools/mockturtle/build
+tools/mockturtle/build-*
+tools/mockturtle/.vscode/
+tools/mockturtle/**/*~
+tools/mockturtle/**/.DS_Store
+tools/mockturtle/docs/_build
+tools/mockturtle/docs/doxyxml
