@@ -142,6 +142,96 @@ def cnf2lut_samsat_solve(cnf_path):     # TODO
     
     return sat_status, asg, (trans_time, bench_solvetime)
 
+def cnf2lut_samsat_solve_withmap(cnf_path):     
+    tmp_bench_path = './tmp/tmp_cases.bench'
+    cnf, no_vars = cnf_utils.read_cnf(cnf_path)
+    start_time = time.time()
+    cnf2lut_bench(cnf_path, tmp_bench_path)
+    trans_time = time.time() - start_time
+    x_data, fanin_list, fanout_list, PI_list, PO_list, node2idx = lut_utils.parse_bench_withmap(tmp_bench_path)
+    ###########################################
+    # Matching from cnf to Bench
+    sorted_node2idx = {key: node2idx[key] for key in sorted(node2idx, key=lambda x: int(x[1:]))}
+    count = no_vars
+    map_var = []    
+    for key, value in sorted_node2idx.items():
+        if value in PI_list or value in PO_list:
+            map_var.append(value)
+        else:
+            map_var.append(-1)
+        count -=1
+        if count == 0:
+            break
+    assert len(map_var) == no_vars
+    ###########################################    
+    
+    # ABC 
+    tmp_aig_path = './tmp/tmp_cases.aig'
+    abc_cmd = 'abc/abc -c "read_bench {}; {} write_aiger {};"'.format(tmp_bench_path, syn_recipe, tmp_aig_path)
+    _, abc_time = run_command(abc_cmd)
+    trans_time += abc_time
+    
+    # Map 
+    tmp_mapped_bench_path = './tmp/tmp_cases_mapped.bench'
+    map_cmd = '{} {} {}'.format(mapper_path, tmp_aig_path, tmp_mapped_bench_path)
+    _, map_time = run_command(map_cmd)
+    trans_time += map_time
+    
+    # Solve 
+    x_data_mapped, fanin_list_mapped, fanout_list_mapped, PI_list_mapped, PO_list_mapped, node2idx_mapped = lut_utils.parse_bench_withmap(tmp_mapped_bench_path)
+    # ##########################################
+    # Matching from mapped_bench to cnf    
+    f = open(tmp_mapped_bench_path, 'r')
+    lines = f.readlines()
+    f.close()
+    bench_node_name = []
+    count = no_vars
+    for i in range(len(map_var)):
+        if map_var[i] != -1:
+            line = lines[map_var[i]]
+            if 'INPUT' in line:
+                node_name = line.split("(")[1].split(")")[0]
+                bench_node_name.append(node_name)
+            if 'OUTPUT' in line:
+                node_name = line.split("(")[1].split(")")[0]
+                bench_node_name.append(node_name)
+            if 'LUT' in line:
+                tmp_line = line.replace(' ', '')
+                node_name = tmp_line.split('=')[0]
+                bench_node_name.append(node_name)
+        else:
+            bench_node_name.append(-1)
+        count -= 1
+        if count == 0:
+            break
+    bench_idx =[]
+    for node_name in bench_node_name:
+        if node_name == -1:
+            bench_idx.append(-1)
+        else:
+            bench_idx.append(node2idx_mapped[node_name])
+    # ##########################################
+    f = open(tmp_bench_path, 'r')
+    lines = f.readlines()
+    f.close()
+    const_1_list = []
+    po_k = 0
+    for line in lines:
+        if 'OUTPUT' in line:
+            if 'Const_1' in line:
+                const_1_list.append(PO_list_mapped[po_k])
+            po_k += 1
+    assert len(PO_list_mapped) == po_k 
+    bench_cnf = lut_utils.convert_cnf(x_data_mapped, fanin_list_mapped, const_1_list=const_1_list)
+    sat_status, asg, bench_solvetime = cnf_utils.kissat_solve(bench_cnf, len(x_data_mapped), args='--time={}'.format(TIMEOUT))
+    
+    # Remove 
+    os.remove(tmp_bench_path)
+    os.remove(tmp_aig_path)
+    os.remove(tmp_mapped_bench_path)
+    
+    return sat_status, asg, (trans_time, bench_solvetime), bench_idx
+
 def cnf2aig_solve(cnf_path):
     tmp_aig_path = './tmp/tmp_cases.aig'
     cnf2aig_cmd = '{} {} {}'.format(cnf2aig_path, cnf_path, tmp_aig_path)
