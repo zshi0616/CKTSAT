@@ -85,7 +85,7 @@ def feature_gen_init(lines):
             dst_idx = node2idx[node_name]
             fanin_list[dst_idx] = [-1]
                 
-    return x_data, fanin_list, fanout_list, PI_list, PO_list
+    return x_data, fanin_list, fanout_list, PI_list, PO_list, node2idx
 
 def convert_cnf(data, fanin_list, const_1_list=[], use_node_name=False):
     cnf = []
@@ -184,7 +184,7 @@ def get_level(x_data, fanin_list, fanout_list):
 
 def parse_bench(bench_file):
     data = read_file(bench_file)
-    data, fanin_list, fanout_list, PI_list, PO_list = feature_gen_init(data)
+    data, fanin_list, fanout_list, PI_list, PO_list, node2idx = feature_gen_init(data)
     return data, fanin_list, fanout_list, PI_list, PO_list
 
 def parse_bench_withmap(bench_file):
