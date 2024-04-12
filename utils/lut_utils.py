@@ -186,6 +186,11 @@ def parse_bench(bench_file):
     data = read_file(bench_file)
     data, fanin_list, fanout_list, PI_list, PO_list = feature_gen_init(data)
     return data, fanin_list, fanout_list, PI_list, PO_list
+
+def parse_bench_withmap(bench_file):
+    data = read_file(bench_file)
+    data, fanin_list, fanout_list, PI_list, PO_list, node2idx = feature_gen_init(data)
+    return data, fanin_list, fanout_list, PI_list, PO_list, node2idx
     
 def parse_bench_cnf(bench_file):
     data = read_file(bench_file)
