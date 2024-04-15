@@ -102,6 +102,7 @@ def cnf2lut_solve(cnf_path, verify=True):
         return 0, None, (trans_time, bench_solvetime)
     
 def cnf2lut_samsat_solve(cnf_path):     # TODO
+    cnf, no_vars = cnf_utils.read_cnf(cnf_path)
     tmp_bench_path = './tmp/tmp_cases.bench'
     start_time = time.time()
     cnf2lut_bench(cnf_path, tmp_bench_path)
@@ -109,18 +110,29 @@ def cnf2lut_samsat_solve(cnf_path):     # TODO
     
     # ABC 
     tmp_aig_path = './tmp/tmp_cases.aig'
-    tmp_mapped_bench_path = './tmp/tmp_cases_mapped.bench'
-    abc_cmd = 'abc -c "read_bench {}; {} write_aiger {};"'.format(tmp_bench_path, syn_recipe, tmp_aig_path)
+    abc_cmd = 'abc/abc -c "read_bench {}; {} write_aiger {};"'.format(tmp_bench_path, syn_recipe, tmp_aig_path)
     _, abc_time = run_command(abc_cmd)
     trans_time += abc_time
     
     # Map 
+    tmp_mapped_bench_path = './tmp/tmp_cases_mapped.bench'
     map_cmd = '{} {} {}'.format(mapper_path, tmp_aig_path, tmp_mapped_bench_path)
     _, map_time = run_command(map_cmd)
     trans_time += map_time
     
     # Solve 
     x_data, fanin_list, fanout_list, PI_list, PO_list = lut_utils.parse_bench(tmp_mapped_bench_path)
+
+    f = open(tmp_mapped_bench_path, 'r')
+    lines = f.readlines()
+    f.close()
+    partial_idx = []  
+    for line in lines: 
+        if 'OUTPUT' in line or 'INPUT' in line:
+            str_list = line.split('(')
+            str_list[1]
+            
+    
     f = open(tmp_bench_path, 'r')
     lines = f.readlines()
     f.close()
@@ -150,19 +162,13 @@ def cnf2lut_samsat_solve_withmap(cnf_path):
     trans_time = time.time() - start_time
     x_data, fanin_list, fanout_list, PI_list, PO_list, node2idx = lut_utils.parse_bench_withmap(tmp_bench_path)
     ###########################################
-    # Matching from cnf to Bench
-    sorted_node2idx = {key: node2idx[key] for key in sorted(node2idx, key=lambda x: int(x[1:]))}
-    count = no_vars
-    map_var = []    
-    for key, value in sorted_node2idx.items():
-        if value in PI_list or value in PO_list:
-            map_var.append(value)
-        else:
-            map_var.append(-1)
-        count -=1
-        if count == 0:
-            break
-    assert len(map_var) == no_vars
+    # Matching from cnf to Bench    
+    map_var = [-1]* no_vars     # 原始cnf中的变量 在bench中的位置(不是PIPO 用-1填充) 也是在mapped-bench中的位置
+    for node, idx in node2idx.items():
+        node_name = int(node.replace('N', ''))
+        if idx in PI_list or idx in PO_list:
+            if node_name >= 0 and node_name < no_vars:
+                map_var[node_name] = idx
     ###########################################    
     
     # ABC 
@@ -204,7 +210,7 @@ def cnf2lut_samsat_solve_withmap(cnf_path):
         count -= 1
         if count == 0:
             break
-    bench_idx =[]
+    bench_idx =[]    #原始cnf中的变量 在新cnf中的位置(不是PIPO 用-1填充)
     for node_name in bench_node_name:
         if node_name == -1:
             bench_idx.append(-1)
