@@ -64,7 +64,8 @@ if __name__ == '__main__':
         c2lsam_time = c2lsam_timelist[0] + c2lsam_timelist[1]
         if c2lsam_res == -1:
             print('[WARNING] c2lsam Timeout')
-        assert c2lsam_res == bl_res
+        if bl_res != -1:
+            assert c2lsam_res == bl_res
         print('[INFO] C2LSAM Trans. {:.2f}s, Solve: {:.2f}s, Tot: {:.2f}s | Red.: {:.2f}%'.format(
             c2lsam_timelist[0], c2lsam_timelist[1], c2lsam_time, 
             (bl_time - c2lsam_time) / bl_time * 100
@@ -92,15 +93,46 @@ if __name__ == '__main__':
                     new_clause = [-1*(i+1)]
                     new_cnf.append(new_clause)
             cnf += new_cnf
-            sat_status, asg, new_solvetime = cnf_utils.kissat_solve(cnf, no_vars, args='--time={}'.format(TIMEOUT))
+            sat_status, new_asg, new_solvetime = cnf_utils.kissat_solve(cnf, no_vars, args='--time={}'.format(TIMEOUT))
             assert sat_status == 1
             tot_time = c2lsam_time + new_solvetime
             tot_our_solvetime += new_solvetime
+            
             if sat_status == 1:
+                # BCP
+                check_cnf_res = True
+                bcp_cnf = copy.deepcopy(cnf)
+                remove_flag = [False] * len(bcp_cnf)
+                for var in range(1, no_vars +1):
+                    var_value = new_asg[var-1]
+                    for clause_k, clause in enumerate(bcp_cnf):
+                        if remove_flag[clause_k]:
+                            continue
+                        if var_value == 1:
+                            if var in clause:
+                                remove_flag[clause_k] = True
+                                continue
+                            if -var in clause:
+                                clause.remove(-var)
+                        else:
+                            if -var in clause:
+                                remove_flag[clause_k] = True
+                                continue
+                            if var in clause:
+                                clause.remove(var)
+                
+                    for clause_k, clause in enumerate(bcp_cnf):
+                        if len(clause) == 0:
+                            print('{:}, UNSAT'.format(var))
+                            check_cnf_res = False
+                            break
+                    if check_cnf_res == False:
+                        break
+                assert check_cnf_res
                 print('[INFO] RESULT SAT  Tot: {:.2f}s | Red.: {:.2f}%'.format(tot_time,  (bl_time - tot_time) / bl_time * 100))
-                print('SAT Assignment:{}'.format(asg))
+                print('SAT Assignment:{}'.format(new_asg))
             else:
-                print('[INFO] RESULT UNSAT Tot: {:.2f}s | Red.: {:.2f}%'.format(tot_time,  (bl_time - tot_time) / bl_time * 100))
+                print('[INFO] ERROR')
         
         print()
     
