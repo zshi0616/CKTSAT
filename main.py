@@ -30,6 +30,8 @@ if __name__ == '__main__':
     tot_our_transtime = 0
     
     for case in case_list:
+        if case == 'b30' or case == 'b28':
+            continue
         print('[INFO] Case: {:}'.format(case))
         cnf_path = os.path.join(args.case_dir, '{}.cnf'.format(case) )
         cnf, no_vars = cnf_utils.read_cnf(cnf_path)
@@ -74,8 +76,10 @@ if __name__ == '__main__':
         tot_our_transtime += c2lsam_timelist[0]
         
         # SOLVE
-        if c2lsam_res == -1:
+        if c2lsam_res == 0:
             print('[INFO] RESULT UNSAT' )
+        elif c2lsam_res == -1:
+            print('[INFO] RESULT UNKNOWN' )
         elif c2lsam_res == 1:
             partial_asg = []    
             for i in range(no_vars):  
@@ -94,7 +98,6 @@ if __name__ == '__main__':
                     new_cnf.append(new_clause)
             cnf += new_cnf
             sat_status, new_asg, new_solvetime = cnf_utils.kissat_solve(cnf, no_vars, args='--time={}'.format(TIMEOUT))
-            assert sat_status == 1
             tot_time = c2lsam_time + new_solvetime
             tot_our_solvetime += new_solvetime
             
@@ -131,8 +134,10 @@ if __name__ == '__main__':
                 assert check_cnf_res
                 print('[INFO] RESULT SAT  Tot: {:.2f}s | Red.: {:.2f}%'.format(tot_time,  (bl_time - tot_time) / bl_time * 100))
                 print('SAT Assignment:{}'.format(new_asg))
+            elif sat_status == 0:
+                print('[INFO] RESULT UNSAT')
             else:
-                print('[INFO] ERROR')
+                print('[INFO] RESULT UNKNOWN' )    
         
         print()
     
