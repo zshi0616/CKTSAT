@@ -15,9 +15,10 @@ import time
 import sys 
 sys.setrecursionlimit(100000)
 
-TIMEOUT = 1000 
+TIMEOUT = 10000
 syn_recipe = 'strash; rewrite -lz; balance; rewrite -lz; balance; rewrite -lz; balance; refactor -lz; balance; refactor -lz; balance; '
-mapper_path = './tools/mockturtle/build/examples/my_mapper'
+# mapper_path = './tools/mockturtle/build/examples/my_mapper'
+mapper_path = './utils/my_mapper'
 cnf2aig_path = 'cnf2aig'
 
 def cnf2lut_solve(cnf_path, verify=True):
@@ -173,7 +174,7 @@ def cnf2lut_samsat_solve_withmap(cnf_path):
     
     # ABC 
     tmp_aig_path = './tmp/tmp_cases.aig'
-    abc_cmd = 'abc/abc -c "read_bench {}; {} write_aiger {};"'.format(tmp_bench_path, syn_recipe, tmp_aig_path)
+    abc_cmd = 'utils/abc -c "read_bench {}; {} write_aiger {};"'.format(tmp_bench_path, syn_recipe, tmp_aig_path)
     _, abc_time = run_command(abc_cmd)
     trans_time += abc_time
     
