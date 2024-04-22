@@ -1,0 +1,21 @@
+#!/bin/bash
+
+mkdir tmp 
+
+# Install Mockturtle 
+cd tools/mockturtle 
+mkdir build
+cd build
+cmake ..
+make my_baseline -j4
+make my_mapper -j4
+cd ../../../
+
+# Install ABC
+cd tools/abc
+make -j4
+cd ../../
+
+# Compile 
+pyinstaller --optimize 2 --onefile solver.py
+cp dist/solver ./solver

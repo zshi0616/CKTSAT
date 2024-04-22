@@ -17,8 +17,9 @@ sys.setrecursionlimit(100000)
 
 TIMEOUT = 10000
 syn_recipe = 'strash; rewrite -lz; balance; rewrite -lz; balance; rewrite -lz; balance; refactor -lz; balance; refactor -lz; balance; '
-# mapper_path = './tools/mockturtle/build/examples/my_mapper'
-mapper_path = './utils/my_mapper'
+mapper_path = './tools/mockturtle/build/examples/my_mapper'
+abc_path = './tools/abc/abc'
+# mapper_path = './utils/my_mapper'
 cnf2aig_path = 'cnf2aig'
 
 def cnf2lut_solve(cnf_path, verify=True):
@@ -111,7 +112,7 @@ def cnf2lut_samsat_solve(cnf_path):     # TODO
     
     # ABC 
     tmp_aig_path = './tmp/tmp_cases.aig'
-    abc_cmd = 'abc/abc -c "read_bench {}; {} write_aiger {};"'.format(tmp_bench_path, syn_recipe, tmp_aig_path)
+    abc_cmd = '{} -c "read_bench {}; {} write_aiger {};"'.format(abc_path, tmp_bench_path, syn_recipe, tmp_aig_path)
     _, abc_time = run_command(abc_cmd)
     trans_time += abc_time
     
@@ -174,7 +175,7 @@ def cnf2lut_samsat_solve_withmap(cnf_path):
     
     # ABC 
     tmp_aig_path = './tmp/tmp_cases.aig'
-    abc_cmd = 'utils/abc -c "read_bench {}; {} write_aiger {};"'.format(tmp_bench_path, syn_recipe, tmp_aig_path)
+    abc_cmd = '{} -c "read_bench {}; {} write_aiger {};"'.format(abc_path, tmp_bench_path, syn_recipe, tmp_aig_path)
     _, abc_time = run_command(abc_cmd)
     trans_time += abc_time
     
@@ -270,7 +271,7 @@ def cnf2aig_samsat_solve(cnf_path):
     
     # ABC 
     tmp_mapped_bench_path = './tmp/tmp_cases_mapped.bench'
-    abc_cmd = 'abc -c "read_aiger {}; {} write_aiger {};"'.format(tmp_aig_path, syn_recipe, tmp_aig_path)
+    abc_cmd = '{} -c "read_aiger {}; {} write_aiger {};"'.format(abc_path, tmp_aig_path, syn_recipe, tmp_aig_path)
     _, abc_time = run_command(abc_cmd)
     trans_time += abc_time
     

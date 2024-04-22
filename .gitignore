@@ -7,6 +7,8 @@ output
 bak 
 *.log 
 
+ref
+
 # mockturtle
 tools/mockturtle/build
 tools/mockturtle/build-*
@@ -15,3 +17,12 @@ tools/mockturtle/**/*~
 tools/mockturtle/**/.DS_Store
 tools/mockturtle/docs/_build
 tools/mockturtle/docs/doxyxml
+
+# abc
+tools/abc/abc
+
+# Compile 
+build
+dist 
+solver
+*.spec
